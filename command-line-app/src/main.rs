@@ -5,41 +5,24 @@ fn main() {
    let key = args.next().expect("No Key was passed as an argument");
    let value = args.next().expect("No Value was passed as an argument");
 
-   //Create a file to store the values.
-   let contents = format!("{}\t{}\n", key, value);
-   let write_result = std::fs::write("cl.db", contents);
+   let mut database = Database::new("cl.db").expect("Databas::new() crashed.");
    
-   match write_result {
-      Ok(()) => {}
-      Err(e) => {
-         panic!("Error: {}",e);
-      }
-   }
-
-   let database = Database::new("cl.db").expect("Databas::new() crashed.");
-
-   
-   //read file
-
-   print!("The key is {} = {}", key, value);
+   database.insert(key.to_uppercase(), value.clone());
+   database.insert(key, value);
+   database.flush().expect("Couldn't dump values into database file.");
 }
 
 struct Database {
-   map : HashMap<String, String>
+   map : HashMap<String, String>,
+   filename : String,
 }
 
 impl Database {
       fn new(_filename : &str) -> Result<Database, std::io::Error> {
+         if !std::path::Path::new(_filename).exists(){
+            std::fs::File::create(_filename).expect("Couldn't create file");
+         }
          
-         //Read the file
-         // let contents = match std::fs::read_to_string(_filename)
-         // {
-         //    Ok(c) => c,
-         //    Err(error) => {
-         //       return Err(error);
-         //    }
-         // };
-         // Equivalent to commented code above. Pay attention to the '?'
          let contents = std::fs::read_to_string(_filename)?;
 
          let mut map = HashMap::new();
@@ -53,9 +36,29 @@ impl Database {
          
 
          Ok(Database {
-            map : map
+            map : map,
+            filename : _filename.to_owned()
          })
       }
 
-      impl insert() {}
+      fn insert(&mut self, _key : String, _val : String){
+         //Create a file to store the values.
+
+         self.map.insert(_key, _val);
+
+      }
+
+      //API design decission: We don't want the user to insert values once they have flush the values into the database.
+      //This is why we use self instead of &self so we take the ownership of database.
+      fn flush(self) -> Result<(), std::io::Error>{
+         let mut contents = String::new();
+
+         for pairs in self.map {
+            let pair = format!("{}\t{}\n", pairs.0, pairs.1);
+            contents.push_str(&pair);
+         }
+
+         std::fs::write(&self.filename, contents)
+      }
+
 }
