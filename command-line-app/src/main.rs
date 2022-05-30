@@ -18,12 +18,12 @@ struct Database {
 }
 
 impl Database {
-      fn new(_filename : &str) -> Result<Database, std::io::Error> {
-         if !std::path::Path::new(_filename).exists(){
-            std::fs::File::create(_filename).expect("Couldn't create file");
+      fn new(filename : &str) -> Result<Database, std::io::Error> {
+         if !std::path::Path::new(filename).exists(){
+            std::fs::File::create(filename).expect("Couldn't create file");
          }
          
-         let contents = std::fs::read_to_string(_filename)?;
+         let contents = std::fs::read_to_string(filename)?;
 
          let mut map = HashMap::new();
          //Parse the String
@@ -36,8 +36,8 @@ impl Database {
          
 
          Ok(Database {
-            map : map,
-            filename : _filename.to_owned()
+            map,
+            filename : filename.to_owned()
          })
       }
 
@@ -53,8 +53,8 @@ impl Database {
       fn flush(self) -> Result<(), std::io::Error>{
          let mut contents = String::new();
 
-         for pairs in self.map {
-            let pair = format!("{}\t{}\n", pairs.0, pairs.1);
+         for (key, value) in &self.map {
+            let pair = format!("{}\t{}\n", key, value);
             contents.push_str(&pair);
          }
 
